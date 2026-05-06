@@ -1,0 +1,38 @@
+{
+  "name": "@arcwall/mcp-server",
+  "version": "1.0.0",
+  "description": "Arcwall Security MCP server for Claude Code, Cursor, Windsurf and any MCP-compatible AI coding tool",
+  "main": "dist/index.js",
+  "bin": {
+    "arcwall-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "prepare": "npm run build"
+  },
+  "files": ["dist", "README.md"],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "node-fetch": "^3.3.2",
+    "glob": "^10.3.10"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.0.0",
+    "@types/glob": "^8.1.0"
+  },
+  "keywords": [
+    "mcp", "security", "arcwall", "threat-modeling",
+    "claude-code", "cursor", "windsurf", "ai-security",
+    "mcp-server", "secrets-detection", "prompt-injection"
+  ],
+  "author": "Arcwall Security",
+  "license": "MIT",
+  "homepage": "https://arcwall.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rom-baro/arcwall-mcp"
+  }
+}
