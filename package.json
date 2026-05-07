@@ -1,6 +1,7 @@
 {
   "name": "@arcwall/mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "mcpName": "io.github.rom-baro/arcwall-security",
   "description": "Arcwall Security MCP server for Claude Code, Cursor, Windsurf and any MCP-compatible AI coding tool",
   "main": "dist/index.js",
   "bin": {

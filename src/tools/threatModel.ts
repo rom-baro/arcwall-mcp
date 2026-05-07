@@ -1,4 +1,4 @@
-import { ArcwallClient, parseFindings } from '../client.js';
+import { ArcwallClient } from '../client.js';
 import * as path from 'path';
 
 export async function threatModelHandler(
@@ -14,43 +14,34 @@ export async function threatModelHandler(
     '.yaml', '.yml', '.json', '.tf', '.env'
   ], 40, 120000);
 
-  const endpoint = mode === 'design'
-    ? '/api/design-threat-model'
-    : '/api/build-threat-model';
-
-  const result = await client.post(endpoint, {
-    repoSummary: content, repoName, commitSha: 'mcp-scan'
+  const result = await client.post('/api/build-threat-model', {
+    repoSummary: content,
+    repoName,
+    framework: 'stride'
   });
 
-  const findings = parseFindings(result.analysis || '');
-  const critical = findings.filter(f => f.severity === 'CRITICAL').length;
-  const high = findings.filter(f => f.severity === 'HIGH').length;
-
-  let output = `🏗️ Arcwall STRIDE Threat Model — ${repoName}\n${'━'.repeat(50)}\n`;
-  output += `Mode: ${mode === 'design' ? 'Design' : 'Code'} analysis\n`;
-  output += `${findings.length} threats: ${critical} critical, ${high} high\n\n`;
-
-  if (findings.length === 0) {
-    output += `✅ No significant threats identified\n`;
-  } else {
-    const priority = [
-      ...findings.filter(f => f.severity === 'CRITICAL'),
-      ...findings.filter(f => f.severity === 'HIGH').slice(0, 5)
-    ];
-    for (const f of priority) {
-      output += `🔴 ${f.severity} — ${f.title}\n`;
-      if (f.description) output += `  ${f.description.slice(0, 150)}\n`;
-      if (f.remediation) output += `  Fix: ${f.remediation.slice(0, 100)}\n`;
-      output += '\n';
-    }
-    if (findings.length > priority.length) {
-      output += `...and ${findings.length - priority.length} more threats\n\n`;
-    }
+  if (!result.success) {
+    return {
+      content: [{
+        type: 'text',
+        text: `❌ Threat model failed: ${result.error || 'Unknown error'}`
+      }],
+      isError: true
+    };
   }
+
+  let output = `🏗️ Arcwall STRIDE Threat Model — ${repoName}\n`;
+  output += `${'━'.repeat(50)}\n\n`;
+  output += result.threatModel || 'No threat model generated';
+  output += '\n\n';
+
   if (result.shareUrl) {
-    output += `📊 Full threat model: ${result.shareUrl}\n`;
+    output += `${'━'.repeat(50)}\n`;
+    output += `📊 Full report: ${result.shareUrl}\n`;
     output += `Security lead has been notified for review.\n`;
   }
 
-  return { content: [{ type: 'text', text: output }] };
+  return {
+    content: [{ type: 'text', text: output }]
+  };
 }

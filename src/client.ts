@@ -45,6 +45,7 @@ export class ArcwallClient {
     const results: string[] = [];
     let totalBytes = 0;
     let fileCount = 0;
+
     const SKIP_DIRS = new Set([
       'node_modules', '.git', 'dist', 'build',
       'vendor', '.next', 'coverage', '__pycache__',
@@ -53,6 +54,7 @@ export class ArcwallClient {
 
     const walk = (dir: string, depth: number = 0): void => {
       if (depth > 5 || fileCount >= maxFiles) return;
+
       let entries: fs.Dirent[];
       try {
         entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -60,26 +62,35 @@ export class ArcwallClient {
 
       for (const entry of entries) {
         if (fileCount >= maxFiles) break;
+
+        const fullPath = path.join(dir, entry.name);
+
         if (entry.isDirectory()) {
-          if (!SKIP_DIRS.has(entry.name) && !entry.name.startsWith('.')) {
-            walk(path.join(dir, entry.name), depth + 1);
+          if (!SKIP_DIRS.has(entry.name) &&
+              !entry.name.startsWith('.')) {
+            walk(fullPath, depth + 1);
           }
           continue;
         }
-        const filePath = path.join(dir, entry.name);
+
+        if (!entry.isFile()) continue;
+
         const ext = path.extname(entry.name).toLowerCase();
         const baseName = entry.name.toLowerCase();
+
         const matches = extensions.some(e => {
           if (e.startsWith('.')) return ext === e;
           return baseName === e || baseName.includes(e);
         });
+
         if (!matches) continue;
+
         try {
-          const stat = fs.statSync(filePath);
+          const stat = fs.statSync(fullPath);
           if (stat.size > 100000) continue;
-          const content = fs.readFileSync(filePath, 'utf8');
+          const content = fs.readFileSync(fullPath, 'utf8');
           if (totalBytes + content.length > maxBytes) return;
-          results.push(`FILE: ${filePath}\n${content}\n---`);
+          results.push(`FILE: ${fullPath}\n${content}\n---`);
           totalBytes += content.length;
           fileCount++;
         } catch(e) {}
@@ -87,8 +98,17 @@ export class ArcwallClient {
     };
 
     walk(dirPath);
-    if (results.length === 0) return `No matching files found in ${dirPath}`;
-    return [`Scanned ${results.length} files in ${dirPath}`, '---', ...results].join('\n');
+
+    if (results.length === 0) {
+      return `No matching files found in ${dirPath}. ` +
+        `Searched for: ${extensions.join(', ')}`;
+    }
+
+    return [
+      `Scanned ${results.length} files in ${dirPath}`,
+      '---',
+      ...results
+    ].join('\n');
   }
 
   readSpecificFiles(dirPath: string, fileNames: string[]): string {
